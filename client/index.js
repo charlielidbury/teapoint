@@ -76,6 +76,10 @@ app.get('/login', (req, res) => {
     res.render('login');
 });
 
+app.post('/login', (req, res) => {
+    res.redirect('dashboard');
+});
+
 app.get('/dashboard', (req, res) => {
     res.render('dashboard');
 });
