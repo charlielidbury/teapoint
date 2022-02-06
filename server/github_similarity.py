@@ -59,4 +59,8 @@ def compute_similarity(first, second):
 
 
 def similarity(first, second):
-    return compute_similarity(get_user_languages(first), get_user_languages(second))
+    first_langs = get_user_languages(first)
+    second_langs = get_user_languages(second)
+    intersection = set(first_langs.keys()) & set(second_langs.keys())
+    return (list(intersection), compute_similarity(first_langs, second_langs))
+    
