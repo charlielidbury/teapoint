@@ -81,10 +81,11 @@ def find_common_interests():
         # k: v -> connection_uid: [matched_keywords]
         suggs, matched_keywords = connection_suggestions.get_similar_interest(uid, ranked_keywords)
         for tid, certainty in suggs.items():
+            print(matched_keywords, tid)
             sql_database.db.execute(f"""
                 INSERT INTO recc_interests(user, target, certainty)
                 VALUES ({uid}, {tid}, {certainty}, ?)
-            """, pickle.dumps(matched_keywords[tid]))
+            """, [pickle.dumps(matched_keywords[tid])])
             sql_database.db.commit()
     
     return jsonify({
@@ -95,16 +96,23 @@ def find_common_interests():
 @app.route("/find_git_friends")
 def find_git_friends():
     # load all github IDs
-    github_ids = None
+    github_ids = [a["github"] for a in sql_database.db.execute(f"""
+        SELECT github FROM user
+    """)]
 
     for gid1 in github_ids:
         for gid2 in github_ids:
             if gid1 != gid2:
-                (languages, certainty) = github_similarity.compute_similarity(gid1, gid2)
+                (languages, certainty) = github_similarity.similarity(gid1, gid2)
                 sql_database.db.execute(f"""
                     INSERT INTO recc_git(user, target, certainty, con)
-                    VALUES ({gid1}, {gid2}, {certainty}, {pickle.dumps(languages)})
-                """)
+                    VALUES (
+                        (SELECT rowid FROM user WHERE github = "{gid1}"),
+                        (SELECT rowid FROM user WHERE github = "{gid2}"),
+                        {certainty},
+                        ?
+                    )
+                """, [pickle.dumps(languages)])
                 sql_database.db.commit()
         # THE 5 IN FOLLOWING LINE NEEDS TO BE REPLACED WITH SOMETHING
 
