@@ -38,9 +38,10 @@ def find_mutuals():
     connection_graph = sql_data_transforms.create_connections_graph(messages)
 
     # run mutual finder algorithm
-    for message in messages:
-        uid = message["sender"]
-        suggs = connection_suggestions.get_mutuals(uid, connection_graph)
+    uids = set([m[3] for m in messages])
+    for uid in uids:
+        # mutuals is a dictionary of k: v -> second_degree_connection_uid: [mutual_connection_uid]
+        suggs, mutuals = connection_suggestions.get_mutuals(uid, connection_graph)
         # update db
         for tid, certainty in suggs.items():
             sql_database.db.execute(f"""
@@ -48,7 +49,6 @@ def find_mutuals():
                 VALUES ({uid}, {tid}, {certainty})
             """)
     
-    return
     return jsonify({
         "success": True
     })
@@ -64,14 +64,15 @@ def find_common_interests():
     uids = set([m[3] for m in messages])
 
     for uid in uids:
-        suggs = connection_suggestions.get_similar_interest(uid, ranked_keywords)
+        # matched keywords is a dictionary of the form
+        # k: v -> connection_uid: [matched_keywords]
+        suggs, matched_keywords = connection_suggestions.get_similar_interest(uid, ranked_keywords)
         for tid, certainty in suggs.items():
             sql_database.db.execute(f"""
                 INSERT INTO recc_interests(user, target, certainty)
                 VALUES ({uid}, {tid}, {certainty})
             """)
     
-    return
     return jsonify({
         "success": True
     })
