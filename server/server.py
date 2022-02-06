@@ -140,7 +140,10 @@ def get_reccomendations():
         ORDER BY certainty DESC
         LIMIT 1
     """))[0])
-    recc_mutual["con"] = pickle.loads(recc_mutual["con"])
+    recc_mutual["con"] = [
+        dict(list(sql_database.db.execute(f"SELECT name FROM user WHERE rowid = {a}"))[0])["name"]
+        for a in pickle.loads(recc_mutual["con"])
+    ]
 
     # recc_interests = dict(list(sql_database.db.execute(f"""
     #     SELECT user.name, user.title, user.github, user.icon, recc_interests.con
@@ -164,7 +167,7 @@ def get_reccomendations():
     print(recc_mutual, recc_git)
 
     return jsonify({
-        "mutual": recc_mutual,
+        "mutuals": recc_mutual,
         # "interests": recc_interests,
         "git": recc_git,
     })
