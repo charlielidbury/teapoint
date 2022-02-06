@@ -45,7 +45,7 @@ def extract(m, members):
     receiver = userid_to_name(receiver_id)
 
     body = m["blocks"][0]["elements"][0]["elements"][0]["text"]
-    return [float(time), sender, receiver, body]
+    return [int(float(time) * 1e6), sender, receiver, body]
 
 
 def upload_conversations(last):
@@ -64,3 +64,5 @@ def upload_conversations(last):
     updates.sort(reverse=True)
     next_last = last if not updates else updates[0][0]
     return (next_last, updates)
+
+print(upload_conversations(0))
