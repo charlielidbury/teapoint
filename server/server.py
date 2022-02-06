@@ -6,7 +6,7 @@ import sql_data_transforms
 import slack_extract
 import pickle
 import github_similarity
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
@@ -23,10 +23,21 @@ def pull_messages():
     last_pull_time, updates = slack_extract.upload_conversations(last_pull_time)
     
     for [time, sender, receiver, body, keywords] in updates:
-        sql_database.execute(f""" # probably correct
+        s = f"""
             INSERT INTO message(sent, sender, receiver, content, keywords)
-            VALUES ({time, sender, receiver, body, pickle.dumps(keywords) })
-        """)
+            VALUES (
+                {time},
+                (SELECT rowid FROM user WHERE slack = "{sender}"),
+                (SELECT rowid FROM user WHERE slack = "{receiver}"),
+                "{body}",
+                ?
+            )
+        """
+
+        sql_database.db.execute(s, [pickle.dumps(keywords)])
+        sql_database.db.commit()
+
+    return jsonify("success")
 
 # recc_mutual
 @app.route("/find_mutuals")
@@ -48,6 +59,7 @@ def find_mutuals():
                 INSERT INTO recc_mutual(user, target, certainty)
                 VALUES ({uid}, {tid}, {certainty})
             """)
+            sql_database.db.commit()
     
     return jsonify({
         "success": True
@@ -72,6 +84,7 @@ def find_common_interests():
                 INSERT INTO recc_interests(user, target, certainty)
                 VALUES ({uid}, {tid}, {certainty})
             """)
+            sql_database.db.commit()
     
     return jsonify({
         "success": True
@@ -91,6 +104,7 @@ def find_git_friends():
                     INSERT INTO recc_git(user, target, certainty, con)
                     VALUES ({gid1}, {gid2}, {certainty}, {pickle.dumps(languages)})
                 """)
+                sql_database.db.commit()
         # THE 5 IN FOLLOWING LINE NEEDS TO BE REPLACED WITH SOMETHING
 
     # upload to database
@@ -106,15 +120,18 @@ def find_git_friends():
 @app.route("/get_reccomendations")
 def get_reccomendations():
     uid = request.args.get("uid")
-
-    recc_mutual = dict(list(sql_database.db.execute(f"""
+    print("HELLO")
+    recc_mutual = sql_database.db.execute(f"""
         SELECT user.name, user.title, user.github, user.icon, recc_mutual.con
         FROM recc_mutual
         JOIN user ON user.rowid = user
         WHERE user = {uid}
         ORDER BY certainty DESC
         LIMIT 1
-    """))[0])
+    """)
+    print("WORLD")
+    recc_mutual = dict(list(recc_mutual)[0])
+    print("TEST")
 
     recc_interests = dict(list(sql_database.db.execute(f"""
         SELECT user.name, user.title, user.github, user.icon, recc_mutual.con
@@ -135,6 +152,8 @@ def get_reccomendations():
     """))[0])
     recc_git["con"] = pickle.loads(recc_git["con"])
 
+    print(recc_mutual, recc_interests, recc_git)
+
     return jsonify({
         "mutual": recc_mutual,
         "interests": recc_interests,
@@ -142,6 +161,5 @@ def get_reccomendations():
     })
 
 if __name__ == "__main__":
-    # app.run()
-    find_mutuals()
+    app.run(processes=1, threaded=False)
 
