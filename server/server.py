@@ -82,13 +82,14 @@ def find_git_friends():
     # load all github IDs
     github_ids = None
 
-    similarities = dict()
-
     for gid1 in github_ids:
-        similarities[gid1] = dict()
         for gid2 in github_ids:
             if gid1 != gid2:
-                similarities[gid1][gid2] = github_similarity.compute_similarity(gid1, gid2)
+                (languages, certainty) = github_similarity.compute_similarity(gid1, gid2)
+                sql_database.db.execute(f"""
+                    INSERT INTO recc_git(user, target, certainty, con)
+                    VALUES ({gid1}, {gid2}, {certainty}, {pickle.dumps(languages)})
+                """)
         # THE 5 IN FOLLOWING LINE NEEDS TO BE REPLACED WITH SOMETHING
 
     # upload to database
@@ -106,7 +107,7 @@ def get_reccomendations():
     uid = request.args.get("uid")
 
     recc_mutual = dict(list(sql_database.db.execute(f"""
-        SELECT user.name, user.title, user.github, recc_mutual.con
+        SELECT user.name, user.title, user.github, user.icon, recc_mutual.con
         FROM recc_mutual
         JOIN user ON user.rowid = user
         WHERE user = {uid}
@@ -115,7 +116,7 @@ def get_reccomendations():
     """))[0])
 
     recc_interests = dict(list(sql_database.db.execute(f"""
-        SELECT user.name, user.title, user.github, recc_mutual.con
+        SELECT user.name, user.title, user.github, user.icon, recc_mutual.con
         FROM recc_interests
         JOIN user ON user.rowid = user
         WHERE user = {uid}
@@ -124,13 +125,14 @@ def get_reccomendations():
     """))[0])
 
     recc_git = dict(list(sql_database.db.execute(f"""
-        SELECT user.name, user.title, user.github, recc_mutual.con
+        SELECT user.name, user.title, user.github, user.icon, ecc_mutual.con
         FROM recc_git
         JOIN user ON user.rowid = user
         WHERE user = {uid}
         ORDER BY certainty DESC
         LIMIT 1
     """))[0])
+    recc_git["con"] = pickle.loads(recc_git["con"])
 
     return jsonify({
         "mutual": recc_mutual,
