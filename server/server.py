@@ -7,8 +7,10 @@ import slack_extract
 import pickle
 import github_similarity
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 last_pull_time = 0
 
@@ -128,31 +130,29 @@ def find_git_friends():
 # { git: { user,  } }
 @app.route("/get_reccomendations")
 def get_reccomendations():
-    uid = request.args.get("uid")
+    uid = int(request.args.get("uid"))
     print("HELLO")
-    recc_mutual = sql_database.db.execute(f"""
+    recc_mutual = dict(list(sql_database.db.execute(f"""
         SELECT user.name, user.title, user.github, user.icon, recc_mutual.con
         FROM recc_mutual
         JOIN user ON user.rowid = user
         WHERE user = {uid}
         ORDER BY certainty DESC
         LIMIT 1
-    """)
-    print("WORLD")
-    recc_mutual = dict(list(recc_mutual)[0])
-    print("TEST")
-
-    recc_interests = dict(list(sql_database.db.execute(f"""
-        SELECT user.name, user.title, user.github, user.icon, recc_mutual.con
-        FROM recc_interests
-        JOIN user ON user.rowid = user
-        WHERE user = {uid}
-        ORDER BY certainty DESC
-        LIMIT 1
     """))[0])
+    recc_mutual["con"] = pickle.loads(recc_mutual["con"])
+
+    # recc_interests = dict(list(sql_database.db.execute(f"""
+    #     SELECT user.name, user.title, user.github, user.icon, recc_interests.con
+    #     FROM recc_interests
+    #     JOIN user ON user.rowid = user
+    #     WHERE user = {uid}
+    #     ORDER BY certainty DESC
+    #     LIMIT 1
+    # """))[0])
 
     recc_git = dict(list(sql_database.db.execute(f"""
-        SELECT user.name, user.title, user.github, user.icon, ecc_mutual.con
+        SELECT user.name, user.title, user.github, user.icon, recc_git.con
         FROM recc_git
         JOIN user ON user.rowid = user
         WHERE user = {uid}
@@ -161,11 +161,11 @@ def get_reccomendations():
     """))[0])
     recc_git["con"] = pickle.loads(recc_git["con"])
 
-    print(recc_mutual, recc_interests, recc_git)
+    print(recc_mutual, recc_git)
 
     return jsonify({
         "mutual": recc_mutual,
-        "interests": recc_interests,
+        # "interests": recc_interests,
         "git": recc_git,
     })
 
