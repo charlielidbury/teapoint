@@ -28,8 +28,10 @@ def get_mutuals(target_uid, connection_graph):
 
 def get_similar_interest(target_uid, ranked_keywords, already_connected=[]):
     similarities = dict()
-    target_keywords = ranked_keywords[target_uid]
     matched_keywords = dict()
+    if target_uid not in ranked_keywords:
+        return similarities, matched_keywords
+    target_keywords = ranked_keywords[target_uid]
     for friend_uid, friend_keywords in ranked_keywords.items():
       if friend_uid == target_uid or friend_uid in already_connected:
         continue
