@@ -2,7 +2,7 @@ import logging
 import os
 
 import spacy
-nlp = spacy.load("en_core_web_sm")
+# nlp = spacy.load("en_core_web_sm")
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -70,4 +70,5 @@ def upload_conversations(last):
     return (next_last, updates)
 
 def generate_keywords(message):
-    return nlp(message).ents
+    return []
+    # return nlp(message).ents

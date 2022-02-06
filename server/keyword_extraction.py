@@ -1,6 +1,9 @@
 from wordfreq import word_frequency
 from collections import Counter
 
+# takes in a list of messages sent by a single user
+# where messages are strings representing the content of a message
+# returns a dictionary of the word frequencies for the user
 def extract_keywords(messages):
 
     words = []

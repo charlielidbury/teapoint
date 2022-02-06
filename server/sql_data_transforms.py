@@ -4,18 +4,18 @@ from re import M
 
 def create_connections_graph(messages):
     graph = dict()
-    messages = [SQLMessage(row) for row in messages]
+    
     for message in messages:
-        sender = message.sender
-        receiver = message.reciever
+        sender = message["sender"]
+        receiver = message["receiver"]
         if not graph.get(sender):
             graph[sender] = dict()
         graph[sender][receiver] = graph[sender].get(receiver, 0) + 1
-    return graph
+    
+    # represent weights as a percentage of total messages sent
+    for sender, connections in graph.items():
+        total_messages = sum(list(connections.values()))
+        for connection, messages in graph[sender].items():
+            graph[sender][connection] = messages / total_messages
 
-class SQLMessage:
-    def __init__(self, sql_row):
-        self.time = sql_row[1]
-        self.reciever = sql_row[2]
-        self.sender = sql_row[3]
-        self.content = sql_row[4]
+    return graph

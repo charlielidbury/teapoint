@@ -5,6 +5,8 @@ from collections import Counter
 import os
 import math
 
+from functools import lru_cache
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -29,6 +31,7 @@ def normalised_values(lsum):
 
     return lsum
 
+@lru_cache(maxsize=None)
 def get_user_languages(username):
     user = g.get_user(username)
     repos_single = language_sums(user.get_repos())
