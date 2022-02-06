@@ -21,7 +21,7 @@ def get_mutuals(target_uid, connection_graph):
             # the middle connection's strengths
             overall_connection_strength = fst_connection_strength * snd_connection_strength
             mutuals_score[snd_connection_uid] = mutuals_score.get(snd_connection_uid, 0) + overall_connection_strength
-            mutuals[snd_connection_uid] = mutuals.get(snd_connection_uid, []).append(fst_connection_uid)
+            mutuals[snd_connection_uid] = mutuals.get(snd_connection_uid, []) + [fst_connection_uid]
     
     return dict(sorted(mutuals_score.items(), key=lambda x: x[1], reverse=True)), mutuals
 

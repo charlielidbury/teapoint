@@ -55,10 +55,11 @@ def find_mutuals():
         suggs, mutuals = connection_suggestions.get_mutuals(uid, connection_graph)
         # update db
         for tid, certainty in suggs.items():
+            print(mutuals[tid], mutuals, tid)
             sql_database.db.execute(f"""
-                INSERT INTO recc_mutual(user, target, certainty)
-                VALUES ({uid}, {tid}, {certainty})
-            """)
+                INSERT INTO recc_mutual(user, target, certainty, con)
+                VALUES ({uid}, {tid}, {certainty}, ?)
+            """, [pickle.dumps(mutuals[tid])])
             sql_database.db.commit()
     
     return jsonify({
@@ -82,8 +83,8 @@ def find_common_interests():
         for tid, certainty in suggs.items():
             sql_database.db.execute(f"""
                 INSERT INTO recc_interests(user, target, certainty)
-                VALUES ({uid}, {tid}, {certainty})
-            """)
+                VALUES ({uid}, {tid}, {certainty}, ?)
+            """, pickle.dumps(matched_keywords[tid]))
             sql_database.db.commit()
     
     return jsonify({
