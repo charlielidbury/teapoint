@@ -1,6 +1,9 @@
 import logging
 import os
 
+import spacy
+nlp = spacy.load("en_core_web_sm")
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -45,7 +48,8 @@ def extract(m, members):
     receiver = userid_to_name(receiver_id)
 
     body = m["blocks"][0]["elements"][0]["elements"][0]["text"]
-    return [int(float(time) * 1e6), sender, receiver, body]
+    kws = generate_keywords(body)
+    return [int(float(time) * 1e6), sender, receiver, body, list(kws)]
 
 
 def upload_conversations(last):
@@ -65,4 +69,5 @@ def upload_conversations(last):
     next_last = last if not updates else updates[0][0]
     return (next_last, updates)
 
-print(upload_conversations(0))
+def generate_keywords(message):
+    return nlp(message).ents
