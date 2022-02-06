@@ -1,3 +1,6 @@
+from ast import keyword
+
+
 def get_mutuals(target_uid, connection_graph):
     # tally of 2nd degree connections and their 
     # connection path strength
@@ -19,3 +22,27 @@ def get_mutuals(target_uid, connection_graph):
     
     return dict(sorted(mutuals.items(), key=lambda x: x[1], reverse=True))
 
+
+def get_similar_interest(target_uid, ranked_keywords, already_connected=[]):
+    similarities = dict()
+    target_keywords = ranked_keywords[target_uid]
+    for friend_uid, friend_keywords in ranked_keywords.items():
+      if friend_uid == target_uid or friend_uid in already_connected:
+        continue
+      similarities[target_uid] = get_keyword_similarity(target_keywords, friend_keywords)
+    return similarities
+
+
+# takes two lists of keywords both ordered from rank 1 to rank n
+# returns similarity based on spearmans rank
+def get_keyword_similarity(keywords1, keywords2):
+    keywords1_weight = { kw: (1/(rank + 2)) for rank, kw in enumerate(keywords1) }
+    keywords2_weight = { kw: (1/(rank + 2)) for rank, kw in enumerate(keywords2) }
+
+    score = 0
+    
+    for kw, kw1_weight in keywords1_weight.items():
+        kw2_weight = keywords2_weight.get(kw, 0)
+        score += kw1_weight * kw2_weight
+    
+    return score
